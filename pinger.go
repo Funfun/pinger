@@ -3,16 +3,17 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // Pinger
 type Pinger struct {
 	Interval   time.Duration
 	DestURL    url.URL
-	httpClient *http.Client
+	httpClient *retryablehttp.Client
 	cancel     func()
 }
 
@@ -22,7 +23,8 @@ func NewPinger(every time.Duration, destURL string) (*Pinger, error) {
 		return nil, err
 	}
 
-	return &Pinger{Interval: every, DestURL: *u, httpClient: http.DefaultClient}, nil
+	retryClient := retryablehttp.NewClient()
+	return &Pinger{Interval: every, DestURL: *u, httpClient: retryClient}, nil
 }
 
 func (p Pinger) Start(ctx context.Context) {
@@ -43,10 +45,11 @@ func (p Pinger) Start(ctx context.Context) {
 }
 
 func (p Pinger) ping(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", p.DestURL.String(), nil)
+	req, err := retryablehttp.NewRequest("GET", p.DestURL.String(), nil)
 	if err != nil {
 		return err
 	}
+
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		return err
