@@ -49,7 +49,7 @@ func (p Pinger) Start(ctx context.Context) {
 					log.Println(err)
 				}
 			default:
-				log.Println("unsupport PingerType")
+				log.Println("unsupported PingerType")
 			}
 		case <-ctx.Done():
 			log.Println("stopping pinger")
